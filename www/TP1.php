@@ -1,5 +1,7 @@
 <?php
-//require _DIR_ . '/vendor/autoload.php';
+require 'vendor/autoload.php';
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 /*
 Tout le code doit se faire dans ce fichier PHP
 
@@ -10,7 +12,28 @@ Réalisez un formulaire HTML contenant :
 - pwd
 - pwdConfirm
 */
-?>
+try {
+    $pdo = new PDO('pgsql:host=172.18.0.2;port=5432;dbname=devdb', 'devuser', 'devpass');
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    // Requête de création de la table si elle n'existe pas
+    $sql = <<<SQL
+    CREATE TABLE IF NOT EXISTS "users" (
+        id SERIAL PRIMARY KEY,
+        firstname VARCHAR(30),
+        lastname VARCHAR(30),
+        email VARCHAR(50),
+        password TEXT
+    );
+    SQL;
+
+    $pdo->exec($sql);
+
+} catch (PDOException $e) {
+    echo "Erreur : " . $e->getMessage();
+}?>
+
+
 <!DOCTYPE html>
 <html lang="fr">
     <head>
@@ -36,9 +59,9 @@ Réalisez un formulaire HTML contenant :
 
             <label for="pwd">Password : </label>
             <input type="password" name="pwd" id="pwd" placeholder="Password" required><br>
-            <small>Your password must contain at least 8 character, including a capital letter, a small letter, a number and a special character (ex: ! @ # $ % ^ & *)</small>
+            <small>Your password must contain at least 8 character, including a capital letter, a small letter, a number and a special character (ex: ! @ # $ % ^ & *)</small><br>
 
-            <label for="cpwd">Password Confirm</label>
+            <label for="cpwd">Password Confirm : </label>
             <input type="password" name="cpwd" id="cpwd" placeholder="Confirm your password" required><br><br>
 
             <button type="submit" name="submit"> Submit</button>
@@ -100,10 +123,6 @@ if ($password === $cpassword) {
 try {
     $pdo = new PDO('pgsql:host=172.18.0.2;port=5432;dbname=devdb', 'devuser', 'devpass');
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e){
-    echo "Erreur de connexion : " . $e->getMessage();
-    exit;
-}
 
 $emailPresent="select id from \"user\" where email=:email";
 $stmt=$pdo->prepare($emailPresent);
@@ -114,7 +133,40 @@ $stmt ->execute([
 if($stmt->fetch()){
     echo '<script>Swal.fire("Erreur", "Cet email est déjà utilisé", "error");</script>';
     exit;
-}
+} 
+// else {
+//     $html="
+// <h1>Verify and sign in</h1>
+// <h2>Hello, </h2>
+// <p>Thank you for signing up. Please click the link below to verify your email: </p>
+// <p><a href=">
+//     Verify My Email
+// </a></p>
+// <p>If you did not request this, please ignore this email.</p>
+// <p>Thanks</p>
+// ";
+// $mail = new PHPMailer(true);
+// try {
+//     $mail->isSMTP();
+//     $mail->Host = 'smtp.gmail.com';
+//     $mail->SMTPAuth = true;
+//     $mail -> Port = 587;
+
+//     $mail->setFrom('pouvelle@gmail.com');
+//     $mail -> addAddress($email);
+//     $mail ->Subject = 'Verification mail';
+
+//     $mail -> isHTML(true);
+//     $mail->Body=$html;
+
+//     $mail->send();
+//     echo"Mail has been successfully sended";
+// }
+// catch(Exception $e) {
+//     echo"erreur : " . $mail->ErrorInfo;
+//     exit;
+// }
+// }
 
 if (isset($_POST['submit'])) {
     if ($firstname !== null && $lastname !== null) {
@@ -151,6 +203,11 @@ if (isset($_POST['submit'])) {
         ]);
     }
 
+}
+}
+catch (PDOException $e){
+    echo "Erreur de connexion : " . $e->getMessage();
+    exit;
 }
 }
 /*
